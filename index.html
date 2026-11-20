@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AeroAgent AI - 無人機智慧營運與飛安決策總控台</title>
+    <style>
+        :root {
+            --bg-dark: #090d16; --bg-card: #111827; --bg-panel: #1e293b;
+            --border: #334155; --primary: #38bdf8; --success: #22c55e;
+            --danger: #ef4444; --warning: #f59e0b; --text-main: #f8fafc; --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; font-family: 'Microsoft JhengHei', -apple-system, sans-serif; }
+        body { margin: 0; background: var(--bg-dark); color: var(--text-main); }
+        .navbar { background: rgba(17, 24, 39, 0.95); border-bottom: 1px solid var(--border); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: bold; }
+        .brand span { color: var(--primary); }
+        .nav-tabs { display: flex; gap: 10px; }
+        .tab-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .tab-btn:hover { border-color: var(--primary); color: var(--text-main); }
+        .tab-btn.active { background: var(--primary); color: #0f172a; border-color: var(--primary); }
+        .container { max-width: 1150px; margin: 30px auto; padding: 0 20px; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); border-radius: 12px; padding: 35px; margin-bottom: 30px; }
+        .hero h1 { margin: 0 0 10px 0; font-size: 28px; }
+        .hero p { margin: 0; color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+        .badge-modular { display: inline-block; background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 12px; }
+        .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+        .mod-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+        .mod-card:hover { border-color: var(--primary); }
+        .mod-tag { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 8px; }
+        .mod-card h3 { margin: 0 0 12px 0; font-size: 20px; }
+        .mod-card p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+        .mod-price { background: var(--bg-panel); padding: 10px; border-radius: 6px; font-size: 13px; color: #cbd5e1; margin-bottom: 18px; }
+        .btn-launch { width: 100%; background: var(--primary); color: #0f172a; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .kpi-box { background: var(--bg-panel); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .kpi-box .title { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .kpi-box .num { font-size: 26px; font-weight: bold; color: var(--primary); }
+        .upload-zone { border: 2px dashed var(--primary); background: rgba(56, 189, 248, 0.05); border-radius: 10px; padding: 30px; text-align: center; margin-bottom: 20px; }
+        .btn-sec { background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border); padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 0 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: var(--bg-panel); color: var(--text-muted); }
+        .pill-danger { background: var(--danger); color: white; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .pill-warn { background: var(--warning); color: #0f172a; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .pill-ok { background: var(--success); color: #0f172a; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <div class="brand">🚁 AeroAgent <span>AI 戰情總控台</span></div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('home', 0)">🏠 總控台首頁</button>
+        <button class="tab-btn" onclick="switchTab('mod1', 1)">🩺 01. 飛控日誌體檢</button>
+        <button class="tab-btn" onclick="switchTab('mod2', 2)">🛡️ 02. 空域合規填表</button>
+        <button class="tab-btn" onclick="switchTab('mod3', 3)">🛸 03. 機載斷訊應變</button>
+    </div>
+</div>
+<div class="container">
+    <div id="home" class="view-section active">
+        <div class="hero">
+            <div class="badge-modular">✨ 企業級模組化架構 ｜ 支援單一模組獨立採購與 API 串接</div>
+            <h1>降低炸機風險、自動化空域合規、賦能全自主飛行</h1>
+            <p>專為無人機製造商（OEM）與商業巡檢團隊打造的 AI Agent 解決方案。客戶可依據最迫切的營運痛點「單獨導入任一模組」，無需更動現有硬體即可快速上線。</p>
+        </div>
+        <div class="module-grid">
+            <div class="mod-card">
+                <div>
+                    <div class="mod-tag">MODULE 01 ｜ 雲端預測性維護</div>
+                    <h3>🩺 飛控日誌 AI 體檢醫生</h3>
+                    <p>自動解析 PX4 / ArduPilot / DJI 飛行紀錄（CSV），在零件損壞前精準揪出馬達震動異常與電池電芯老化，並自動發送 LINE 停飛警報。</p>
+                </div>
+                <div>
+                    <div class="mod-price">💡 <strong>核心價值：</strong>避免單次 30~80 萬炸機損失<br>📦 <strong>導入方式：</strong>可獨立訂閱 (SaaS)</div>
+                    <button class="btn-launch" onclick="switchTab('mod1', 1)">進入互動演示 (支援上傳 CSV) →</button>
+                </div>
+            </div>
+            <div class="mod-card">
+                <div>
+                    <div class="mod-tag">MODULE 02 ｜ 法規與RPA自動化</div>
+                    <h3>🛡️ 動態空域合規與自動填表</h3>
+                    <p>即時爬取民航局禁航公告與氣象風速，起飛前執行高風險自動煞車；合規通過後，啟動瀏覽器自動化引擎一鍵填寫空域申請表。</p>
+                </div>
+                <div>
+                    <div class="mod-price">💡 <strong>核心價值：</strong>規避 30 萬罰單、省 80% 文書工時<br>📦 <strong>導入方式：</strong>可獨立訂閱 / API 授權</div>
+                    <button class="btn-launch" onclick="switchTab('mod2', 2)">進入空域審查模擬 →</button>
+                </div>
+            </div>
+            <div class="mod-card">
+                <div>
+                    <div class="mod-tag">MODULE 03 ｜ 邊緣運算機載核心</div>
+                    <h3>🛸 抗干擾與斷訊自主應變</h3>
+                    <p>100% 斷網純離線運行於機載電腦。遭遇 GPS 干擾或圖傳斷訊時，毫秒級切換 VIO 視覺定位與 LiDAR 避障，自主尋找安全空地迫降。</p>
+                </div>
+                <div>
+                    <div class="mod-price">💡 <strong>核心價值：</strong>非紅供應鏈與軍警標案剛需規格<br>📦 <strong>導入方式：</strong>單機離線授權 / 專案買斷</div>
+                    <button class="btn-launch" onclick="switchTab('mod3', 3)">進入黑盒子復盤演示 →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mod1" class="view-section">
+        <div class="panel">
+            <h2 style="margin-top:0;">🩺 飛控日誌 AI 深度體檢中心（即時解析引擎）</h2>
+            <p style="color:var(--text-muted);">請現場選擇無人機匯出的飛行日誌 <code>.csv</code> 檔案進行即時 AI 診斷，或直接點擊右側載入內建異常測試數據：</p>
+                        <div class="upload-zone">
+                <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;" onchange="handleFileUpload(event)">
+                <div style="margin-bottom:15px;">
+                    <button class="btn-launch" style="width:auto; padding:10px 22px;" onclick="document.getElementById('csvFileInput').click()">📂 上傳任意 CSV / TXT 飛行檔</button>
+                    <button class="btn-sec" onclick="runSampleCSV('bad')">🔴 載入異常範例</button>
+                    <button class="btn-sec" onclick="runSampleCSV('good')">🟢 載入健康範例</button>
+                </div>
+                <div style="text-align:left; max-width:850px; margin:auto;">
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">✍️ 或直接在此貼上任意表格數據 / 輸入測試數值（例如：<code>機號: DJI-M350, 震動: 36.2, 電壓: 3.38V, 溫度: 81度</code>）：</label>
+                    <div style="display:flex; gap:10px;">
+                        <textarea id="liveRawInput" rows="3" style="flex:1; background:var(--bg-dark); color:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:10px; font-family:monospace; font-size:13px;" placeholder="隨便貼上 CSV 內容，或直接打字：震動 35, 電壓 3.3, 溫度 80"></textarea>
+                        <button class="btn-launch" style="width:140px;" onclick="analyzeTextArea()">⚡ 立即當場分析</button>
+                    </div>
+                </div>
+                <div id="uploadStatus" style="margin-top:12px; font-size:13px; color:var(--primary);">目前顯示：異常零件測試數據 (UAV-TC-01)</div>
+            </div>
+
+            <div class="kpi-row">
+                <div class="kpi-box"><div class="title">受檢無人機編號</div><div class="num" id="m1_drone_id">UAV-TC-01</div></div>
+                <div class="kpi-box"><div class="title">偵測異常項目數</div><div class="num" id="m1_count" style="color:var(--danger);">3 項高/中風險</div></div>
+                <div class="kpi-box"><div class="title">預估避免炸機資產損失</div><div class="num" id="m1_loss" style="color:var(--success);">NT$ 480,000</div></div>
+            </div>
+            <div id="m1_alert_banner" style="background:#7f1d1d; border:1px solid var(--danger); padding:12px 18px; border-radius:8px; margin-bottom:15px;"></div>
+            <table>
+                <thead><tr><th>時間戳記</th><th>異常零件總成</th><th>實測數據 vs 安全閾值</th><th>風險等級</th><th>AI 維修技師派工建議</th></tr></thead>
+                <tbody id="m1_table_body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    
+    <div id="mod2" class="view-section">
+        <div class="panel">
+            <h2 style="margin-top:0;">🛡️ 互動式空域合規審查與 Manus 自動填表模擬器</h2>
+            <p style="color:var(--text-muted);">請現場調整下方任務參數，測試 AI 守門員如何「高風險自動煞車」或「自動登入民航局系統填表」：</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📍 選擇任務飛行區域</label>
+                    <select id="m2_loc">
+                        <option value="dali">台中市大里區 (合法綠區 / 限高120m)</option>
+                        <option value="airport">台中市沙鹿區 (清泉崗機場紅區禁航區)</option>
+                        <option value="port">台中港區 (商港管制區 / 需專案申請)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📏 申請飛行高度 (公尺，法定上限 120m)</label>
+                    <input type="number" id="m2_alt" value="80" min="10" max="300">
+                </div>
+                <div class="form-group">
+                    <label>💨 現場預報陣風風速 (m/s，安全上限 10 m/s)</label>
+                    <input type="number" id="m2_wind" value="4.2" step="0.5" min="0" max="25">
+                </div>
+            </div>
+            <button class="btn-launch" onclick="runInteractiveAirspace()">🚀 啟動 AI 空域合規審查與自動填表流程</button>
+            <div id="m2_result_box" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    
+
+        <div id="mod3" class="view-section">
+        <div class="panel">
+            <h2 style="margin-top:0;">🛸 機載抗干擾與斷訊自主應變核心（100% 離線決策模擬）</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📡 GPS 與通訊狀態</label>
+                    <select id="m3_gps">
+                        <option value="jammed">🚨 遭受強電磁干擾 (GPS 丟失 + 圖傳斷線)</option>
+                        <option value="spoofed">⚠️ 遭受 GPS 欺騙攻擊 (座標異常跳動)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🚧 前方 LiDAR 障礙物距離：<strong id="m3_dist_val" style="color:var(--primary);">11.5</strong> 公尺</label>
+                    <input type="range" id="m3_dist" min="5" max="40" step="0.5" value="11.5" oninput="document.getElementById('m3_dist_val').innerText=this.value">
+                </div>
+                <div class="form-group">
+                    <label>🔋 剩餘電池電量：<strong id="m3_bat_val" style="color:var(--warning);">18</strong> %</label>
+                    <input type="range" id="m3_bat" min="10" max="85" step="1" value="18" oninput="document.getElementById('m3_bat_val').innerText=this.value">
+                </div>
+            </div>
+            <button class="btn-launch" style="background:var(--danger); color:white;" onclick="runInteractiveFailsafe()">⚡ 觸發離線保命應變計算 (生成黑盒子日誌)</button>
+            <div id="m3_result_box" style="margin-top:20px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId, idx) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+    }
+
+    const badCSV = "Timestamp,Drone_ID,Motor1_RPM,Motor2_RPM,Vibration_Max_ms2,Cell_Min_V,ESC_Temp_C\n10:01:00,UAV-TC-01,5200,5210,12.4,3.85,48\n10:05:30,UAV-TC-01,5300,5180,14.1,3.78,52\n10:12:00,UAV-TC-01,5450,4890,34.8,3.42,79";
+    const goodCSV = "Timestamp,Drone_ID,Motor1_RPM,Motor2_RPM,Vibration_Max_ms2,Cell_Min_V,ESC_Temp_C\n14:00:00,UAV-TAICHUNG-OK,5100,5105,11.2,4.15,42\n14:05:00,UAV-TAICHUNG-OK,5150,5148,13.5,4.02,45\n14:10:00,UAV-TAICHUNG-OK,5120,5122,12.8,3.95,46";
+
+    function analyzeTextArea() {
+        const text = document.getElementById('liveRawInput').value;
+        if (!text.trim()) return alert("請先在輸入框打幾個測試數字或貼上數據！");
+        document.getElementById('uploadStatus').innerText = "⚡ 已完成現場即時數據智慧萃取與診斷！";
+        analyzeCSVText(text);
+    }
+
+    function runSampleCSV(type) {
+        if (type === 'bad') {
+            document.getElementById('uploadStatus').innerText = "🔴 已載入「異常馬達與電池」模擬日誌 (UAV-TC-01)";
+            analyzeCSVText(badCSV);
+        } else {
+            document.getElementById('uploadStatus').innerText = "🟢 已載入「全機健康」模擬日誌 (UAV-TAICHUNG-OK)";
+            analyzeCSVText(goodCSV);
+        }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('uploadStatus').innerText = `📂 已即時解析現場上傳檔案：【${file.name}】`;
+            analyzeCSVText(e.target.result);
+        };
+        reader.readAsText(file);
+    }
+
+    // 純前端智慧解析引擎 (免 Python 後端，直接可放 GitHub Pages)
+    function analyzeCSVText(rawText) {
+        let anomalies = [];
+        let droneId = "LIVE-TEST-UAV";
+        const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
+
+        const evalRow = (ts, vib, volt, temp) => {
+            if (!isNaN(vib) && vib > 30.0) {
+                anomalies.push({ time: ts, part: "動力馬達 / 螺旋槳總成", metric: `震動峰值 ${vib} m/s² (上限 30.0)`, severity: "高風險", advice: "立即停飛！檢查馬達軸承磨損與螺旋槳動平衡。" });
+            }
+            if (!isNaN(volt) && volt < 3.50) {
+                anomalies.push({ time: ts, part: "智慧鋰電池組 (電芯壓降異常)", metric: `實測電壓 ${volt} V (下限 3.50V)`, severity: "高風險", advice: "電芯內阻過高出現驟降，請立即汰換電池，嚴禁升空。" });
+            }
+            if (!isNaN(temp) && temp > 75.0) {
+                anomalies.push({ time: ts, part: "電子變速器 (ESC) / 動力模組", metric: `實測溫度 ${temp} °C (上限 75°C)`, severity: "中風險", advice: "散熱效率下降，建議清理散熱模組並檢查電流負載。" });
+            }
+        };
+
+        if (lines.length >= 2 && (lines[0].includes(",") || lines[0].includes("\t"))) {
+            const sep = lines[0].includes("\t") ? "\t" : ",";
+            const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
+            const idIdx = headers.findIndex(h => ["id", "drone", "name", "編號", "機號"].some(k => h.includes(k)));
+            const tsIdx = headers.findIndex(h => ["time", "ts", "時間"].some(k => h.includes(k)));
+            const vibIdx = headers.findIndex(h => ["vib", "acc", "震動", "振動"].some(k => h.includes(k)));
+            const voltIdx = headers.findIndex(h => ["volt", "bat", "cell", "電壓", "電池"].some(k => h.includes(k)));
+            const tempIdx = headers.findIndex(h => ["temp", "esc", "溫度"].some(k => h.includes(k)));
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(sep);
+                if (idIdx >= 0 && cols[idIdx]) droneId = cols[idIdx].trim();
+                const ts = (tsIdx >= 0 && cols[tsIdx]) ? cols[tsIdx].trim() : `第 ${i} 筆紀錄`;
+                const vib = vibIdx >= 0 ? parseFloat(cols[vibIdx]) : NaN;
+                const volt = voltIdx >= 0 ? parseFloat(cols[voltIdx]) : NaN;
+                const temp = tempIdx >= 0 ? parseFloat(cols[tempIdx]) : NaN;
+                evalRow(ts, vib, volt, temp);
+            }
+        } else {
+            const idM = rawText.match(/(?:機號|編號|drone|id)[^\w-]*([\w-]+)/i);
+            if (idM) droneId = idM[1];
+            const vibM = rawText.match(/(?:震動|振動|vib|vibration)[^\d]*(\d+(?:\.\d+)?)/i);
+            const voltM = rawText.match(/(?:電壓|電池|volt|voltage|v)[^\d]*(\d+(?:\.\d+)?)/i);
+            const tempM = rawText.match(/(?:溫度|電調|temp|esc)[^\d]*(\d+(?:\.\d+)?)/i);
+            evalRow("現場即時輸入", vibM ? parseFloat(vibM[1]) : NaN, voltM ? parseFloat(voltM[1]) : NaN, tempM ? parseFloat(tempM[1]) : NaN);
+        }
+
+        document.getElementById('m1_drone_id').innerText = droneId;
+        document.getElementById('m1_count').innerText = anomalies.length > 0 ? `${anomalies.length} 項異常` : "0 項異常 (健康)";
+        document.getElementById('m1_count').style.color = anomalies.length > 0 ? "var(--danger)" : "var(--success)";
+        document.getElementById('m1_loss').innerText = anomalies.length > 0 ? `NT$ ${(anomalies.length * 160000).toLocaleString()}` : "NT$ 0";
+
+        const tbody = document.getElementById('m1_table_body');
+        tbody.innerHTML = anomalies.length === 0
+            ? `<tr><td colspan="5" style="text-align:center; color:var(--success);">✅ 本趟飛行數據完全正常，無異常零件紀錄。</td></tr>`
+            : anomalies.map(item => `<tr><td>${item.time}</td><td><strong>${item.part}</strong></td><td style="color:#f87171; font-weight:bold;">${item.metric}</td><td><span class="${item.severity === '高風險' ? 'pill-danger' : 'pill-warn'}">${item.severity}</span></td><td>${item.advice}</td></tr>`).join('');
+    }
+
+    function runInteractiveAirspace() {
+        const loc = document.getElementById('m2_loc').value;
+        const alt = parseFloat(document.getElementById('m2_alt').value);
+        const wind = parseFloat(document.getElementById('m2_wind').value);
+        const box = document.getElementById('m2_result_box');
+        let errors = [];
+        if (loc === 'airport') errors.push("任務座標位於【清泉崗機場周邊紅區禁航區】，未經專案核准嚴禁升空（最高罰鍰 150 萬元）。");
+        if (loc === 'port') errors.push("任務座標位於【台中商港管制區】，需先取得港務分公司同意書方可申請。");
+        if (alt > 120) errors.push(`申請高度 ${alt} 公尺超過一般空域法定上限 120 公尺。`);
+        if (wind > 10) errors.push(`現場陣風 ${wind} m/s 超過無人機抗風安全上限（10 m/s），觸發氣象安全煞車。`);
+
+        if (errors.length > 0) {
+            box.innerHTML = `<div style="background:#7f1d1d; border-left:6px solid var(--danger); padding:20px; border-radius:8px;"><h3 style="margin:0 0 10px 0;">🛑 高風險自動煞車已啟動（拒絕放行並阻斷填表）</h3><ul style="line-height:1.7; margin:0 0 12px 0;">${errors.map(e => `<li>${e}</li>`).join('')}</ul><div style="background:rgba(0,0,0,0.3); padding:10px 14px; border-radius:6px; font-size:13px;">📲 <strong>HITL 真人警報已觸發：</strong>已透過 LINE 通知飛安主管與飛手修改航線，預估規避 <strong>NT$ 300,000+</strong> 違規罰鍰。</div></div>`;
+        } else {
+            box.innerHTML = `<div style="background:#14532d; border-left:6px solid var(--success); padding:20px; border-radius:8px;"><h3 style="margin:0 0 10px 0;">🟢 空域與氣象全數合規！Manus 自動填表引擎執行完畢</h3><p style="margin:0 0 12px 0;">✅ 空域屬性：合法綠區 ｜ ✅ 飛行高度：${alt}m ｜ ✅ 現場陣風：${wind} m/s ｜ ✅ 飛手證照與責任險有效</p><div style="background:#090d16; padding:14px; border-radius:6px; font-family:monospace; font-size:13px; color:#86efac;">[Manus RPA 執行紀錄]<br>1. 自動登入交通部民航局「遙控無人機管理資訊系統」... 成功<br>2. 自動填入無人機註冊號 (AA-88925)、高度 ${alt}m 與起訖座標... 完成<br>3. 活動申請單已送出（案件編號：CAA-2026-88412），節省約 45 分鐘作業時間！</div></div>`;
+        }
+    }
+
+    function runInteractiveFailsafe() {
+        const gps = document.getElementById('m3_gps').value;
+        const dist = parseFloat(document.getElementById('m3_dist').value);
+        const bat = parseInt(document.getElementById('m3_bat').value);
+        const ts = new Date().toISOString().replace('T', ' ').substring(0, 23);
+        let steps = [], logLines = [];
+
+        if (gps === 'jammed') {
+            steps.push("立即切斷衛星導航依賴，無縫切換至【雙目 VIO 視覺里程計 + IMU】自主空間定位");
+            logLines.push(`[${ts}] [CRITICAL] GPS_LOST & COMM_LINK_DOWN -> Switched to Offline VIO_SLAM_Navigation.`);
+        } else {
+            steps.push("偵測到 GPS 座標異常跳動（Spoofing），強制隔離偽造衛星訊號並改用慣性視覺融合定位");
+            logLines.push(`[${ts}] [WARNING] GPS_SPOOFING_DETECTED -> Isolated GNSS module, running Vision-Inertial Odometry.`);
+        }
+        if (dist < 15) {
+            steps.push(`前方 ${dist}m 偵測到高壓電纜障礙物！執行【全向動力緊急懸停煞車】並垂直爬升 8 公尺越障`);
+            logLines.push(`[${ts}] [DANGER] LiDAR obstacle at ${dist}m (<15m threshold) -> Triggered Emergency_Brake & Climb(+8m).`);
+        } else {
+            steps.push(`前方 ${dist}m 空間淨空（安全距離充足），保持低空巡航姿態並持續掃描地形`);
+            logLines.push(`[${ts}] [INFO] LiDAR forward clearance ${dist}m (Safe) -> Maintaining stable trajectory.`);
+        }
+        if (bat <= 25) {
+            steps.push(`剩餘電量僅 ${bat}%（不足以返航），下視相機已鎖定下方平坦柏油空地，執行【自主精準垂直迫降】`);
+            logLines.push(`[${ts}] [ACTION] Low Battery (${bat}%) -> Confirmed clear ground zone, executing Autonomous_AutoLand.`);
+        } else {
+            steps.push(`剩餘電量 ${bat}% 充足，沿 VIO 視覺記憶軌跡【自主安全返航（Visual RTH）】至起飛點降落`);
+            logLines.push(`[${ts}] [ACTION] Battery sufficient (${bat}%) -> Executing Visual_Memory_Return_To_Home (RTH).`);
+        }
+
+                document.getElementById('m3_result_box').innerHTML = `<div style="background:var(--bg-panel); border:1px solid var(--primary); padding:20px; border-radius:8px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><h3 style="margin:0; color:var(--success);">✅ 機載 AI 已在 12 毫秒內完成純離線保命決策</h3><span class="pill-ok">100% 斷網本機運算</span></div><ul style="line-height:1.6; color:#f8fafc;">${steps.map((s, i) => `<li style="margin-bottom:8px;"><strong>STEP ${i+1}：</strong>${s}</li>`).join('')}</ul><div style="background:#030712; padding:14px; border-radius:6px; font-family:monospace; font-size:13px; color:#94a3b8; margin-top:12px;"><strong>📄 即時寫入機載黑盒子稽核紀錄 (onboard_blackbox_audit.log)：</strong><br>${logLines.join('<br>')}</div></div>`;
+    }
+
+    window.onload = function() { analyzeCSVText(badCSV); runInteractiveAirspace(); runInteractiveFailsafe(); };
+</script>
+
+
+</body>
+</html>
